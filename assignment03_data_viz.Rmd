@@ -1,7 +1,7 @@
 ---
-title: "Data_viz_assignment03"
+title: "Introduction to Data Science Assignment 03"
 author: "Ryan Collins"
-date: "2/7/2020"
+date: "2/14/2020"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -9,14 +9,60 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
+knitr::opts_chunk$set(message = FALSE)
 ```
 
+Here are the libraries which will be needed:
+
+```{r load-packages, message = FALSE}
+library(readxl)
+library(tidyverse)
+```
+
+I started by figuring out which data set to use. I ended up downloading Census data that focused on assets at the household level to analyzee the wealth by different households and types of assets they held. To do this I needed to read the Excel file from the Census website, which can be [found here](https://www.census.gov/data/tables/2015/demo/wealth/wealth-asset-ownership.html)
+
+Once I had the data, I needed to move forward with subsectioning the data to get focus on several areas. The code I used is below.
+
+```{r }
+#Read in the master dataset:
+wealth_tables_cy2015 <- read_excel("wealth_tables_cy2015.xlsx")
+
+```
 
 ```{r}
-library(readxl)
-wealth_tables_cy2015 <- read_excel("wealth_tables_cy2015.xlsx")
-summary(wealth_tables_cy2015, "Characteristic")
+#subsection dataset into area of interest:
+
+#Regions in the US:
+regions <- filter(wealth_tables_cy2015, Category == "Region")
+
+#Education levels:
+edu <- filter(wealth_tables_cy2015, Category == "Highest Level of Educational Attainment in the Household")	
+
+#Household Networth:
+hh_networth <- filter(wealth_tables_cy2015, Category == "Household Net Worth")
+
+#If Individual's are assisted by government programs:
+gov_program <- filter(wealth_tables_cy2015, Category == "Participation in Government Programs")
+
+#Ethnicity:
+ethnicity <- filter(wealth_tables_cy2015, Category == "Race and Hispanic Origin of Householder")
+
 ```
 
+With this done I can start my first plot which looks at the median networth of housholds by ethnicity:
 
+```{r make-plot, fig.width= 12, fig.height=8, eval= TRUE,  echo = FALSE}
+ggplot(ethnicity, mapping = aes(x = Characteristic, y = Networth)) +
+  geom_bar(aes(fill = "red", color = "black"), stat = "identity") + 
+             labs(title = "Median Networth by Ethnicity",
+                  x = "Ethnicty",
+                  y = "Median Networth",
+       caption = "Source: Census Bureau") +
+  scale_color_manual(values = "#190707", ) +
+  scale_fill_manual(values = "#08088A") + 
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    axis.line = element_line(color = "black"),
+    legend.position = "none")
+
+```
