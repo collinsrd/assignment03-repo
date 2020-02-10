@@ -23,7 +23,7 @@ I started by figuring out which data set to use. I ended up downloading Census d
 
 Once I had the data, I needed to move forward with subsectioning the data to get focus on several areas. The code I used is below.
 
-```{r }
+```{r}
 #Read in the master dataset:
 wealth_tables_cy2015 <- read_excel("wealth_tables_cy2015.xlsx")
 
@@ -51,7 +51,7 @@ ethnicity <- filter(wealth_tables_cy2015, Category == "Race and Hispanic Origin 
 
 With this done I can start my first plot which looks at the median networth of housholds by ethnicity:
 
-```{r make-plot, fig.width= 12, fig.height=8, eval= TRUE,  echo = FALSE}
+```{r plot1, fig.width= 12, fig.height=8, eval = TRUE, echo = FALSE}
 ggplot(ethnicity, mapping = aes(x = Characteristic, y = Networth)) +
   geom_bar(aes(fill = "red", color = "black"), stat = "identity") + 
              labs(title = "Median Networth by Ethnicity",
@@ -65,4 +65,29 @@ ggplot(ethnicity, mapping = aes(x = Characteristic, y = Networth)) +
     axis.line = element_line(color = "black"),
     legend.position = "none")
 
+```
+
+And a second visualizaiton that looks at the corrleation between median totals in houshold retirement accounts and net worth based upon educational attainment. I've also included a third variable in this plot, illustrating home equity: 
+
+
+```{r plot2, fig.width= 12, fig.height=8, warning = FALSE,  echo = FALSE}
+ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) + 
+  geom_smooth(method = "loess", se = F) + 
+  geom_point(aes(color = Characteristic, size = Equity_in_Own_Home)) + 
+  scale_x_continuous(limits = c(0, 350000),
+                     breaks = c(0, 100000, 200000, 300000, 400000)) +
+  scale_y_continuous(limits = c(0, NA),
+                     breaks = c(0, 20000, 40000, 60000, 80000, 100000, 120000)) +
+  scale_size_continuous(name = "Median Equity in House") +
+  scale_color_discrete(name = "Highest Level of Education") + 
+  labs(title = "Educational Attainment Retirement Accounts and Overall Networth",
+       x = "Median Net Worth",
+       y = "Median Total in Retirement Accounts",
+       caption = "Source: Census Bureau") +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.line = element_line(color = "black"),
+    panel.grid.minor = element_blank())
 ```
