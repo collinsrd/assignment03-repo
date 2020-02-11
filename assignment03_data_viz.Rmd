@@ -26,26 +26,71 @@ Once I had the data, I needed to move forward with subsectioning the data to get
 ```{r}
 #Read in the master dataset:
 wealth_tables_cy2015 <- read_excel("wealth_tables_cy2015.xlsx")
+#Also importing an additional dataset here:
+fed_hh_balance <- read_csv("z1-visualization-data.csv")
+#there is an additional step to rename all the variables which can be seen in the r code but 
+#not displayed here.
 
 ```
 
+```{r include = FALSE}
+fed_hh_balance <- fed_hh_balance %>%
+  rename(hh.npo.net.worth = FL152090005.Q,
+         hh.npo.net.worth.DPI.percentage = FL152090006.Q,
+         hh.npo.total.assets = FL152000005.Q,
+         hh.npo.total.assets.dpi.percentage = FL152000006.Q,
+         hh.npo.total.liabilities = FL154190005.Q,
+         hh.npo.total.liabilities.dpi.percentage = FL154190006.Q,
+         hh.npo.nonfinancial.assets = LM152010005.Q,
+         hh.npo.household.nonfinancial.assets.dpi.percentage = LM152010006.Q,
+         hh.npo.financial.assets = FL154090005.Q,
+         hh.npo.financial.assets.dpi.percentage = FL154090006.Q,
+         hh.npo.home.mortgages = FL153165105.Q,
+         hh.npo.home.mortgages.dpi.percentage = FL153165106.Q,
+         hh.npo.consumer.credit = FL153166000.Q,
+         hh.npo.consumer.credit.dpi.percentage = FL153166006.Q,
+         hh.npo.other.liabilities= FL154199005.Q,
+         hh.npo.pther.liabilities.dpi.percentage = FL154199006.Q,
+         hh.npo.real.estate = LM155035015.Q,
+         hh.npo.Real.estate.dpi.percentage = LM155035016.Q,
+         hh.npo.consumer.durables = LM155111005.Q,
+         hh.npo.consumer.durables.dpi.percentage = LM155111006.Q,
+         npo.nonfinancial.assets = LM162010005.Q,
+         npo.nonfinancial.assets.dpi.percentage = LM162010006.Q,
+         hh.npo.deposits = FL154000025.Q,
+         hh.npo.deposits.dpi.percentage = FL154000026.Q,
+         hh.npo.directly.held.corporate.equities = LM153064105.Q,
+         hh.npo.directly.held.corporate.equities.dpi.percentage = LM153064106.Q,
+         hh.npo.indirectly.held.corporate.eqities = LM153064175.Q,
+         hh.npo.indirectly.held.corporate.equities.dpi.percentage = LM153064176.Q,
+         hhdbpe = FL594190045.Q,
+         hhdbpe.dpi.percentage = FL594190046.Q,
+         hh.npo.proprietors.equity.in.noncorporate.business = LM152090205.Q,
+         hh.npo.proprietors.equity.in.noncorporate.business.dpi.percentage = LM152090206.Q,
+         hh.npo.other.financial_assets = FL153099005.Q,
+         hh.npo.other.financial.assets.dpi.percentage = FL153099006.Q,
+         hh.npo.net.worth.change.in.unadjusted.level = FC152090005.Q,
+         hh.npo.direct.and.indirect.holdings.of.corporate.equity.change.in.unadjusted_level = FC153064475.Q,
+         hh.npo.real.estate.change.in.unadjusted.level = FC155035005.Q,
+         hh.npo.other.change.in.unadjusted.level = FC152090045.Q,
+         disposable.personal.income = FA156012005.Q)
+```
+
 ```{r}
-#subsection dataset into area of interest:
+#subsection both datasets into area of interest:
 
 #Regions in the US:
 regions <- filter(wealth_tables_cy2015, Category == "Region")
-
 #Education levels:
 edu <- filter(wealth_tables_cy2015, Category == "Highest Level of Educational Attainment in the Household")	
-
 #Household Networth:
 hh_networth <- filter(wealth_tables_cy2015, Category == "Household Net Worth")
-
 #If Individual's are assisted by government programs:
 gov_program <- filter(wealth_tables_cy2015, Category == "Participation in Government Programs")
-
 #Ethnicity:
 ethnicity <- filter(wealth_tables_cy2015, Category == "Race and Hispanic Origin of Householder")
+#Household data from 2000-2019:
+fed_hh_balance_2000 <- filter(fed_hh_balance, date >= "2000:Q1")
 
 ```
 
@@ -87,6 +132,25 @@ ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) +
   theme(
     plot.title = element_text(face = "bold", size = 10),
     axis.text.x = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.line = element_line(color = "black"),
+    panel.grid.minor = element_blank())
+```
+
+And for a third plot:
+```{r plot3, fig.width= 12, fig.height=8, warning = FALSE,  echo = FALSE}
+ggplot(fed_hh_balance_2000, mapping = aes(x = date)) + 
+  geom_point(mapping = aes(y = disposable.personal.income), color = "blue") + 
+  scale_x_discrete(breaks = c("2000:Q1", "2002:Q1", "2004:Q1", "2006:Q1", 
+                              "2008:Q1", "2010:Q1", "2012:Q1", 
+                              "2014:Q1", "2016:Q1", "2018:Q1")) + 
+  labs(title = "Household Disposible Personal Income",
+       x = "Date: 2000-2019",
+       y = "Disposible Personal Income (in Millions of Dollars)",
+       caption = "Source: Federal Reserve") +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", angle = 45),
     axis.text.y = element_text(face = "bold"),
     axis.line = element_line(color = "black"),
     panel.grid.minor = element_blank())
