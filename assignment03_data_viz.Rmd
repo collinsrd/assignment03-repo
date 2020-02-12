@@ -19,7 +19,7 @@ library(readxl)
 library(tidyverse)
 ```
 
-I started by figuring out which data set to use. I ended up downloading Census data that focused on assets at the household level to analyzee the wealth by different households and types of assets they held. To do this I needed to read the Excel file from the Census website, which can be [found here](https://www.census.gov/data/tables/2015/demo/wealth/wealth-asset-ownership.html)
+I started by figuring out which data set to use. I ended up downloading Census data that focused on assets at the household level to analyzee the wealth by different households and types of assets they held. To do this I needed to read the Excel file from the Census website, which can be [found here](https://www.census.gov/data/tables/2015/demo/wealth/wealth-asset-ownership.html). I've also added in a second datatset from the federal reserve, which looks at the make up of US household balance sheets (assets, liabilities, credit, etc...) from 1952 - 2019. That dataset can be downloaded [here](https://www.federalreserve.gov/releases/z1/dataviz/z1/balance_sheet/table/)
 
 Once I had the data, I needed to move forward with subsectioning the data to get focus on several areas. The code I used is below.
 
@@ -28,8 +28,7 @@ Once I had the data, I needed to move forward with subsectioning the data to get
 wealth_tables_cy2015 <- read_excel("wealth_tables_cy2015.xlsx")
 #Also importing an additional dataset here:
 fed_hh_balance <- read_csv("z1-visualization-data.csv")
-#there is an additional step to rename all the variables which can be seen in the r code but 
-#not displayed here.
+#there is an additional step to rename all the variables which can be seen in the r code but not displayed here.
 
 ```
 
@@ -79,16 +78,10 @@ fed_hh_balance <- fed_hh_balance %>%
 ```{r}
 #subsection both datasets into area of interest:
 
-#Regions in the US:
-regions <- filter(wealth_tables_cy2015, Category == "Region")
-#Education levels:
-edu <- filter(wealth_tables_cy2015, Category == "Highest Level of Educational Attainment in the Household")	
-#Household Networth:
-hh_networth <- filter(wealth_tables_cy2015, Category == "Household Net Worth")
-#If Individual's are assisted by government programs:
-gov_program <- filter(wealth_tables_cy2015, Category == "Participation in Government Programs")
 #Ethnicity:
 ethnicity <- filter(wealth_tables_cy2015, Category == "Race and Hispanic Origin of Householder")
+#Education levels:
+edu <- filter(wealth_tables_cy2015, Category == "Highest Level of Educational Attainment in the Household")	
 #Household data from 2000-2019:
 fed_hh_balance_2000 <- filter(fed_hh_balance, date >= "2000:Q1")
 
@@ -96,7 +89,9 @@ fed_hh_balance_2000 <- filter(fed_hh_balance, date >= "2000:Q1")
 
 With this done I can start my first plot which looks at the median networth of housholds by ethnicity:
 
-```{r plot1, fig.width= 12, fig.height=8, eval = TRUE, echo = FALSE}
+ggplot2 code below:
+
+```{r plot1, fig.width= 12, fig.height=8}
 ggplot(ethnicity, mapping = aes(x = Characteristic, y = Networth)) +
   geom_bar(aes(fill = "red", color = "black"), stat = "identity") + 
              labs(title = "Median Networth by Ethnicity",
@@ -112,17 +107,18 @@ ggplot(ethnicity, mapping = aes(x = Characteristic, y = Networth)) +
 
 ```
 
-And a second visualizaiton that looks at the corrleation between median totals in houshold retirement accounts and net worth based upon educational attainment. I've also included a third variable in this plot, illustrating home equity: 
+And a second visualizaiton that looks at the corrleation between median totals in houshold retirement accounts and networth based upon educational attainment. I've also included a third variable in this plot, illustrating home equity: 
 
 
-```{r plot2, fig.width= 12, fig.height=8, warning = FALSE,  echo = FALSE}
+```{r plot2, fig.width= 12, fig.height=8, warning = FALSE,  echo = TRUE}
 ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) + 
-  geom_smooth(method = "loess", se = F) + 
+  geom_line(method = "loess", span = 0.4, se = F) + 
   geom_point(aes(color = Characteristic, size = Equity_in_Own_Home)) + 
-  scale_x_continuous(limits = c(0, 350000),
-                     breaks = c(0, 100000, 200000, 300000, 400000)) +
-  scale_y_continuous(limits = c(0, NA),
-                     breaks = c(0, 20000, 40000, 60000, 80000, 100000, 120000)) +
+  scale_x_continuous(limits = c(1, 350000),
+                     breaks = c(0, 100000, 200000, 300000, 400000),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(1, NA),
+                     breaks = c(20000, 40000, 60000, 80000, 100000, 120000)) +
   scale_size_continuous(name = "Median Equity in House") +
   scale_color_discrete(name = "Highest Level of Education") + 
   labs(title = "Educational Attainment Retirement Accounts and Overall Networth",
@@ -134,18 +130,22 @@ ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) +
     axis.text.x = element_text(face = "bold"),
     axis.text.y = element_text(face = "bold"),
     axis.line = element_line(color = "black"),
-    panel.grid.minor = element_blank())
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "black", linetype = "dotted"),
+    panel.background = element_blank())
 ```
 
-And for a third plot:
-```{r plot3, fig.width= 12, fig.height=8, warning = FALSE,  echo = FALSE}
+And for a third plot, which looks at how disposible income for housholds has increased since 2000. It's surprising how little of a hit it took during the 2008 great recession:
+
+```{r plot3, fig.width= 12, fig.height=8, warning = FALSE}
 ggplot(fed_hh_balance_2000, mapping = aes(x = date)) + 
   geom_point(mapping = aes(y = disposable.personal.income), color = "blue") + 
   scale_x_discrete(breaks = c("2000:Q1", "2002:Q1", "2004:Q1", "2006:Q1", 
                               "2008:Q1", "2010:Q1", "2012:Q1", 
-                              "2014:Q1", "2016:Q1", "2018:Q1")) + 
+                              "2014:Q1", "2016:Q1", "2018:Q1"),
+                   expand = c(0, 0.1)) + 
   labs(title = "Household Disposible Personal Income",
-       x = "Date: 2000-2019",
+       x = "Time: 2000-2019",
        y = "Disposible Personal Income (in Millions of Dollars)",
        caption = "Source: Federal Reserve") +
   theme(
@@ -153,5 +153,37 @@ ggplot(fed_hh_balance_2000, mapping = aes(x = date)) +
     axis.text.x = element_text(face = "bold", angle = 45),
     axis.text.y = element_text(face = "bold"),
     axis.line = element_line(color = "black"),
-    panel.grid.minor = element_blank())
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(size = 0.2, color = "black", linetype = "dashed"),
+    panel.background = element_blank())
+```
+
+And for the fourth plot, I wanted to get a sense of the density graph of where the majority of household assets, liabilities, credit and networth are, and to get a better sense of how they may relate to each other. 
+
+```{r, plot4, fig.width= 12, fig.height=8, warning = FALSE}
+ggplot(fed_hh_balance) + 
+  geom_density(aes(x = hh.npo.net.worth, color = "black"), fill = "black", alpha = 0.5) + 
+  geom_density(aes(x = hh.npo.total.assets, color = "red"), fill = "red", alpha = 0.4) +
+  geom_density(aes(x = hh.npo.consumer.credit, color = "green"), fill = "green", alpha = 0.3) + 
+  geom_density(aes(x = hh.npo.total.liabilities , color = "blue"), fill = "blue", alpha = 0.2) +
+  scale_x_continuous(limits = c(0, 5500000),
+                     expand = c(0, 1)) +
+  scale_y_continuous(limits = c(0, NA),
+                         expand = c(0,0)) +
+  scale_color_identity(name = "Makeup of Household Balance Sheet",
+                       breaks = c("black", "blue", "green", "red"),
+                       labels = c("Networth", "Total Liabilities", "Consumer Credit", "Total Assets"),
+                       guide = "legend") + 
+labs(title = "Networth, Assets, Liabilities, and Credit '52 - '19 (Millions of Dollars)",
+     x = "Millions of Dollars",
+     y = "Density",
+     caption = "Source: Federal Reserve") +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", angle = 45),
+    axis.text.y = element_text(face = "bold"),
+    axis.line = element_line(color = "black"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(size = 0.5, color = "black", linetype = "dotted"),
+    panel.background = element_blank())
 ```
