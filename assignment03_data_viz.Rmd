@@ -12,24 +12,24 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(message = FALSE)
 ```
 
-Here are the libraries which will be needed:
+Here are the libraries which will be needed for this analysis:
 
 ```{r load-packages, message = FALSE}
 library(readxl)
 library(tidyverse)
 ```
 
-I started by figuring out which data set to use. I ended up downloading Census data that focused on assets at the household level to analyzee the wealth by different households and types of assets they held. To do this I needed to read the Excel file from the Census website, which can be [found here](https://www.census.gov/data/tables/2015/demo/wealth/wealth-asset-ownership.html). I've also added in a second datatset from the federal reserve, which looks at the make up of US household balance sheets (assets, liabilities, credit, etc...) from 1952 - 2019. That dataset can be downloaded [here](https://www.federalreserve.gov/releases/z1/dataviz/z1/balance_sheet/table/)
+I wanted to begin this project by further understanding the composition of U.S. household finances and any potential correlation between holdings. I started by downloading Census data that focused on assets at the household level to analyze the wealth by different households and types of assets they held. To do this I needed to read the Excel file from the Census website, which can be [found here](https://www.census.gov/data/tables/2015/demo/wealth/wealth-asset-ownership.html).
 
-Once I had the data, I needed to move forward with subsectioning the data to get focus on several areas. The code I used is below.
+While the census data provided helpful deliniations between households, I also wanted to understand additional equity and credit availability on the macro level so I've also added in a second datatset from the Federal Reserve, which looks at the make up of US household balance sheets (assets, liabilities, credit, etc...) from 1952 - 2019. That dataset can be [downloaded here](https://www.federalreserve.gov/releases/z1/dataviz/z1/balance_sheet/table/)
 
 ```{r}
 #Read in the master dataset:
 wealth_tables_cy2015 <- read_excel("wealth_tables_cy2015.xlsx")
 #Also importing an additional dataset here:
 fed_hh_balance <- read_csv("z1-visualization-data.csv")
-#there is an additional step to rename all the variables which can be seen in the r code but not displayed here.
 
+#there is an additional step to rename all the variables which can be seen in the r code but not displayed here.
 ```
 
 ```{r include = FALSE}
@@ -75,6 +75,8 @@ fed_hh_balance <- fed_hh_balance %>%
          disposable.personal.income = FA156012005.Q)
 ```
 
+Once I had the data imported, I needed to move forward with subsectioning the data to focus on several areas - specifically, ethnicity, education levels, and the past two decades (2000-2019). The code to do so is below:
+
 ```{r}
 #subsection both datasets into area of interest:
 
@@ -87,33 +89,46 @@ fed_hh_balance_2000 <- filter(fed_hh_balance, date >= "2000:Q1")
 
 ```
 
-With this done I can start my first plot which looks at the median networth of housholds by ethnicity:
+With the areas of focus now completed, done I can start my first plot which looks at the median networth of housholds by ethnicity. This is of interest to further understand the breakdown of wealth by families of color, the inequality that results, and the potential policy interventions that might require. For example, if at the end of this experiment there is a need to increase access to credit (or lack of retirement savings, etc..) to Black and Hispanic households, it should reflect in the low networth of those houseeholds.
 
 ggplot2 code below:
 
 ```{r plot1, fig.width= 12, fig.height=8}
-ggplot(ethnicity, mapping = aes(x = Characteristic, y = Networth)) +
-  geom_bar(aes(fill = "red", color = "black"), stat = "identity") + 
-             labs(title = "Median Networth by Ethnicity",
-                  x = "Ethnicty",
-                  y = "Median Networth",
+ggplot(ethnicity, mapping = aes(x = Characteristic, 
+                                y = Networth)) +
+  geom_bar(fill = "#0404B4", 
+           color = "black",
+           alpha = 0.7,
+           stat = "identity") + 
+  geom_text(aes(label = Networth), 
+            color = "orange", 
+            vjust = -1, 
+            size = 4, 
+            family = "Times New Roman Bold") + 
+  labs(title = "Median Networth by Ethnicity",
+       subtitle = "Household Networth in U.S. dollars",
+       x = "Ethnicty",
+       y = "Median Networth",
        caption = "Source: Census Bureau") +
   scale_color_manual(values = "#190707", ) +
   scale_fill_manual(values = "#08088A") + 
   theme(
-    plot.title = element_text(face = "bold", size = 10),
+    plot.title = element_text(face = "bold",
+                              size = 10),
     axis.line = element_line(color = "black"),
     legend.position = "none")
-
 ```
 
-And a second visualizaiton that looks at the corrleation between median totals in houshold retirement accounts and networth based upon educational attainment. I've also included a third variable in this plot, illustrating home equity: 
+As hypothosised, black and hipanic households have magnatitudes lower median networth, when compared to other households.
 
+Beyond ethnicity breakdowns I believe it is important to also consider education levels. My second visualizaiton does exactly that by looking at the corrleation between median totals in houshold retirement accounts and median networth based upon educational attainment. The notion being, that additional education tends to lead to additional income, which tends to translate into wealth. As such, I've also included a third variable in this plot, illustrating home equity as a size channel. This would be larger the more equity in a home there is.
 
 ```{r plot2, fig.width= 12, fig.height=8, warning = FALSE,  echo = TRUE}
-ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) + 
-  geom_line(method = "loess", span = 0.4, se = F) + 
-  geom_point(aes(color = Characteristic, size = Equity_in_Own_Home)) + 
+ggplot(edu, mapping = aes(x = Networth, 
+                          y = Retirement_accounts_Total)) + 
+  geom_line(method = "loess", color = "black", size = 1, span = 0.4, se = F) + 
+  geom_point(aes(color = Characteristic, 
+                 size = Equity_in_Own_Home)) + 
   scale_x_continuous(limits = c(1, 350000),
                      breaks = c(0, 100000, 200000, 300000, 400000),
                      expand = c(0, 0)) +
@@ -121,7 +136,9 @@ ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) +
                      breaks = c(20000, 40000, 60000, 80000, 100000, 120000)) +
   scale_size_continuous(name = "Median Equity in House") +
   scale_color_discrete(name = "Highest Level of Education") + 
-  labs(title = "Educational Attainment Retirement Accounts and Overall Networth",
+  labs(title = "Household Assets (Home Equity & Retirement Accounts) by Educational Attainment",
+       subtitle = paste("Clear positive coorelation between assets,",
+                        "networth, and education level"),
        x = "Median Net Worth",
        y = "Median Total in Retirement Accounts",
        caption = "Source: Census Bureau") +
@@ -135,16 +152,23 @@ ggplot(edu, mapping = aes(x = Networth, y = Retirement_accounts_Total)) +
     panel.background = element_blank())
 ```
 
-And for a third plot, which looks at how disposible income for housholds has increased since 2000. It's surprising how little of a hit it took during the 2008 great recession:
+Again, no surprise, that education levels have a strong positive corrleation to median networth, and the median total in retirement accounts. 
+
+Taking a step back, for my third plot, I wanted to get a better sense of how disposable income has increased over time. This required me to switch to the second dataset from the federal reserve. In this plot, which looks at the past two decase, I wanted to understand how disposible income has increased, as well as how a consumer's credit (as a percentage of DPI) has been impacted by macro events (specifically the 2008 financial crisis). Do macro events impact consumers credit as they should impact DPI? And how much does DPI take a hit during these downturns? I want to know because more income provides more opportunity to save (or invest in growth-creating enterprises), which in turn should increase household wealth. Also wouldn't this create more access to credit?
 
 ```{r plot3, fig.width= 12, fig.height=8, warning = FALSE}
-ggplot(fed_hh_balance_2000, mapping = aes(x = date)) + 
-  geom_point(mapping = aes(y = disposable.personal.income), color = "blue") + 
+fed_hh_balance_2000 <- filter(fed_hh_balance, date >= "2000:Q1")
+
+ggplot(fed_hh_balance_2000, mapping = aes(x = date, 
+                                          y = disposable.personal.income)) + 
+  geom_point(aes(fill = hh.npo.consumer.credit.dpi.percentage), shape = 22, size = 5) +
   scale_x_discrete(breaks = c("2000:Q1", "2002:Q1", "2004:Q1", "2006:Q1", 
                               "2008:Q1", "2010:Q1", "2012:Q1", 
                               "2014:Q1", "2016:Q1", "2018:Q1"),
-                   expand = c(0, 0.1)) + 
-  labs(title = "Household Disposible Personal Income",
+                   expand = c(0, 0.1)) +
+  scale_fill_continuous(name = "Consumer Credit as % of DPI") +
+  labs(title = "Household Disposible Personal Income (DPI) between 2000 - 2019",
+       subtitle = "Compares Consumer Credit as a Percentage of DPI",
        x = "Time: 2000-2019",
        y = "Disposible Personal Income (in Millions of Dollars)",
        caption = "Source: Federal Reserve") +
@@ -158,30 +182,43 @@ ggplot(fed_hh_balance_2000, mapping = aes(x = date)) +
     panel.background = element_blank())
 ```
 
-And for the fourth plot, I wanted to get a sense of the density graph of where the majority of household assets, liabilities, credit and networth are, and to get a better sense of how they may relate to each other. 
+To a bit of my surprise, I thought DPI would take a bigger hit than it did during the crisis. I'm also interested to see how credit rebounded. Would be curiouss to see how that shifts consumer behavior and prolonged the crisis, and notably how that decrease in credit impacted different household demographics. 
+
+And for the fourth plot, I wanted to get a sense of the density regarding household asssets, liabilities, credit and networth may look. This would be useful to get a better sense of whether there could be correlation between the various components of household financials. Such that do assets translate into potential networth? How do liabilities and assets intermingle with one another? How does credit look compared to all of this? 
 
 ```{r, plot4, fig.width= 12, fig.height=8, warning = FALSE}
 ggplot(fed_hh_balance) + 
-  geom_density(aes(x = hh.npo.net.worth, color = "black"), fill = "black", alpha = 0.5) + 
-  geom_density(aes(x = hh.npo.total.assets, color = "red"), fill = "red", alpha = 0.4) +
-  geom_density(aes(x = hh.npo.consumer.credit, color = "green"), fill = "green", alpha = 0.3) + 
-  geom_density(aes(x = hh.npo.total.liabilities , color = "blue"), fill = "blue", alpha = 0.2) +
+  geom_density(aes(x = hh.npo.net.worth, 
+                   color = "black"), 
+               fill = "black", alpha = 0.5) +
+  geom_density(aes(x = hh.npo.total.assets, 
+                   color = "red"), 
+               fill = "red", alpha = 0.4) +
+  geom_density(aes(x = hh.npo.consumer.credit, 
+                   color = "green"), 
+               fill = "green", alpha = 0.3) + 
+  geom_density(aes(x = hh.npo.total.liabilities , 
+                   color = "blue"), 
+               fill = "blue", alpha = 0.2) +
   scale_x_continuous(limits = c(0, 5500000),
                      expand = c(0, 1)) +
   scale_y_continuous(limits = c(0, NA),
                          expand = c(0,0)) +
   scale_color_identity(name = "Makeup of Household Balance Sheet",
                        breaks = c("black", "blue", "green", "red"),
-                       labels = c("Networth", "Total Liabilities", "Consumer Credit", "Total Assets"),
+                       labels = c("Networth", "Total Liabilities", "Consumer Credit", 
+                                  "Total Assets"),
                        guide = "legend") + 
-labs(title = "Networth, Assets, Liabilities, and Credit '52 - '19 (Millions of Dollars)",
+labs(title = paste("Total Household Networth, Assets, Liabilities,", 
+                   "and Credit '52 - '19 (Millions of Dollars)"),
+     subtitle = "Is there correlation between the makeup of household finances?",
      x = "Millions of Dollars",
-     y = "Density",
+     y = "Number of Houeholds",
      caption = "Source: Federal Reserve") +
   theme(
     plot.title = element_text(face = "bold", size = 10),
     axis.text.x = element_text(face = "bold", angle = 45),
-    axis.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold", size = 8),
     axis.line = element_line(color = "black"),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(size = 0.5, color = "black", linetype = "dotted"),
